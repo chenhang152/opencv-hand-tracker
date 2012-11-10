@@ -8,9 +8,9 @@
 #include "KinematicChain.h"
 
 
-KinematicChain::KinematicChain() {
-	// TODO Auto-generated constructor stub
+KinematicChain::KinematicChain(int id) {
 
+	this->id=id;
 	x=0;y=200;z=0;
 	offset=200;
 	for (int i =0; i<6;i++)
@@ -31,9 +31,6 @@ KinematicChain::KinematicChain() {
 	Points[1]=Points[0]+r1*btVector3(offset,0,0);
 	Points[2]=Points[1]+r1*r2*btVector3(offset,0,0);
 	Points[3]=Points[2]+r1*r2*r3*btVector3(offset,0,0);
-
-
-
 }
 
 void KinematicChain::Draw() {

@@ -26,7 +26,7 @@ using namespace std;
 
 class KinematicChain {
 public:
-	KinematicChain();
+	KinematicChain(int id=0);
 	void Draw();
 	void update();
 	void A1();
@@ -38,6 +38,7 @@ public:
 	int x,y,z;
 	float parametri[6];
 	int offset;
+	int id;
 
 	//rappresentano le posizioni dei punti nello spazio
 	//IN PARTICOLARE:

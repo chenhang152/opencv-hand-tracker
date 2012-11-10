@@ -18,6 +18,8 @@
 #include "particle.h"
 #include "KinematicChain.h"
 #include "particle.h"
+#include "Finger.h"
+#include "Mano.h"
 
 using namespace std;
 using namespace libconfig;
@@ -73,6 +75,8 @@ float glRotateParam=0;
 int Pause=0;
 
 KinematicChain kin;
+
+Mano lamano(btVector3(0,-100,100));
 
 particle* stormo;
 particle best;
@@ -457,7 +461,8 @@ void openGL(void* param)
 	glPopMatrix();
 
 	glPushMatrix();
-	kin.Draw();
+	lamano.Rotate();
+	lamano.Draw();
 	glPopMatrix();
 
 }
@@ -482,6 +487,9 @@ void miniImage(Mat &dest,Mat &source,Point tl, Point br)
 }
 
 int main(int argc, char** argv) {
+
+	//FANCULO AL MONDO
+	system ("killall XnSensorServer");
 
 	//COMMAND LINE PARSING
 	//============================================================================
@@ -523,6 +531,9 @@ int main(int argc, char** argv) {
 	setOpenGlDrawCallback(openglWIN, openGL);
 
 	pso_init();
+
+	//init dita
+
 
 	while(1)
 	{
