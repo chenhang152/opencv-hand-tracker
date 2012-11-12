@@ -19,7 +19,7 @@
 #include "KinematicChain.h"
 #include "particle.h"
 #include "Finger.h"
-#include "Mano.h"
+#include "Aggregato.h"
 
 using namespace std;
 using namespace libconfig;
@@ -37,8 +37,8 @@ using namespace cv;
 #define VMAX 5
 #define ERODEELEM 6
 #define	 ERODESIZE 7
-#define STDIM 	60
-#define	 GENER	30
+#define STDIM 	30
+#define	 GENER	90
 #define	 DEBUG	0
 Mat hsvImage;
 struct fingerConf
@@ -76,7 +76,7 @@ int Pause=0;
 
 KinematicChain kin(0,0,0);
 
-Mano lamano(btVector3(0,-100,100));
+Aggregato oggetto;
 
 particle* stormo;
 particle best;
@@ -138,17 +138,16 @@ void pso_update()
 			float update_stormo=c1*r1*(best.posa[j]-stormo[i].posa[j]);
 			float update_sociale=c2*r2*(stormo[i].posaBest[j]-stormo[i].posa[j]);
 			float update=update_stormo+update_sociale;
+
 			stormo[i].vposa[j]=stormo[i].vposa[j]+update;
 
 			if(abs(stormo[i].vposa[j])>maxSpeed) //controllo se la velocità imposta è maggiore della velocità massima consentita
 			{
 				stormo[i].vposa[j]=(stormo[i].vposa[j]/abs(stormo[i].vposa[j]))*maxSpeed; //recupero il segno e imposta la velocità
 			}
-			if(DEBUG)
-				cout<< "POSA ("<<i <<"): "<<stormo[i].posa[j]<<" MODIFICA: " << stormo[i].vposa[j] ;
+
 			stormo[i].posa[j]+=stormo[i].vposa[j];
-			if(DEBUG)
-				cout << " -> : "<< stormo[i].posa[j] <<endl;
+
 
 		}
 	}
@@ -212,16 +211,26 @@ void pso_compute_error()
 	{
 		for(int j=0;j<partDIM;j++)
 		{
-			kin.parametri[j]=stormo[i].posa[j];
+			//kin.parametri[j]=stormo[i].posa[j];
+			*(oggetto.parametri[j])=stormo[i].posa[j];
 		}
 
-		kin.update();
+		//kin.update();
+		oggetto.update();
 
-		stormo[i].errore_posa=
-				(powf(fingers_3d[0].x-kin.Points[3].x(),2)+
-						powf(fingers_3d[0].y-kin.Points[3].y(),2)+
-						powf(fingers_3d[0].z-kin.Points[3].z(),2));
-
+		stormo[i].errore_posa=0;
+				//(powf(fingers_3d[0].x-kin.Points[3].x(),2)+
+				//		powf(fingers_3d[0].y-kin.Points[3].y(),2)+
+				//		powf(fingers_3d[0].z-kin.Points[3].z(),2));
+		for(int k=0;k<2;k++)
+		{
+			stormo[i].errore_posa+=
+								(
+								powf(fingers_3d[k].x-oggetto.dita[k]->Points[3].x(),2)+
+								powf(fingers_3d[k].y-oggetto.dita[k]->Points[3].y(),2)+
+								powf(fingers_3d[k].z-oggetto.dita[k]->Points[3].z(),2));
+			//stormo[i].errore_posa=sqrtf(stormo[i].errore_posa);
+		}
 
 	}
 
@@ -469,9 +478,8 @@ void openGL(void* param)
 	glPopMatrix();
 
 	glPushMatrix();
-	kin.Draw();
-	//lamano.Rotate();
-	//lamano.Draw();
+	//kin.Draw();
+	oggetto.Draw();
 	glPopMatrix();
 
 }
@@ -663,9 +671,11 @@ int main(int argc, char** argv) {
 
 			for(int i=0;i<partDIM;i++)
 			{
-				kin.parametri[i]=best.posa[i];
+				//kin.parametri[i]=best.posa[i];
+				*(oggetto.parametri[i])=best.posa[i];
 			}
-			kin.update();
+			//kin.update();
+			oggetto.update();
 			pso_perturba_stormo();
 
 

@@ -37,7 +37,7 @@ public:
 	btVector3 Points[4];
 	btVector3 basePoints[4];
 	btVector3 centerOfMass;
-	float parametri[2];
+	float parametri[3];
 
 };
 

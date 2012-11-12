@@ -11,9 +11,13 @@
 KinematicChain::KinematicChain(float x,float y, float z)
 {
 
+
 	this->x=x;
 	this->y=y;
 	this->z=z;
+
+	cout <<"Istanziato oggetto cinematico"<<endl;
+	cout <<x<<" "<<y<<" "<<z<<endl;
 
 	this->offset1=140;
 	this->offset2=120;
@@ -28,7 +32,7 @@ KinematicChain::KinematicChain(float x,float y, float z)
 	btMatrix3x3 r2(q2);
 	btMatrix3x3 r3(q3);
 
-	basePoints[0]=btVector3(0,0,0);
+	basePoints[0]=btVector3(this->x,this->y,this->z);
 	basePoints[1]=basePoints[0]+r1*btVector3(offset1,0,0);
 	basePoints[2]=basePoints[1]+r1*r2*btVector3(offset2,0,0);
 	basePoints[3]=basePoints[2]+r1*r2*r3*btVector3(offset3,0,0);
@@ -73,7 +77,7 @@ void KinematicChain::Draw() {
 
 void  KinematicChain::update() {
 
-	btQuaternion q1( 0,parametri[0],0);
+	btQuaternion q1( parametri[2],parametri[0],0);
 	btQuaternion q2( 0,parametri[1],0);
 	btQuaternion q3( 0,parametri[1]/5*6,0);
 
@@ -82,7 +86,7 @@ void  KinematicChain::update() {
 	btMatrix3x3 r3(q3);
 
 
-
+	Points[0]=basePoints[0];
 	Points[1]=Points[0]+btVector3(0,0,offset1);
 	Points[1]=r1*Points[1];
 	Points[2]=Points[1]+r1*r2*btVector3(0,0,offset2);
