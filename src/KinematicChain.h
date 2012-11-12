@@ -26,29 +26,18 @@ using namespace std;
 
 class KinematicChain {
 public:
-	KinematicChain(int id=0);
+
+	KinematicChain(float x,float y, float z);
 	void Draw();
 	void update();
-	void A1();
-	void A2();
-	void A3();
-	void GlobRotate();
 	virtual ~KinematicChain();
 
 	int x,y,z;
-	float parametri[6];
-	int offset;
-	int id;
-
-	//rappresentano le posizioni dei punti nello spazio
-	//IN PARTICOLARE:
-	//devo valutare la funzione di errore sull'ultimo punto, ovvero il finger tip.
-	//IL PSO:
-	//deve modificare i valori su angle1-2-3 e su global1-2-3
-
+	int offset1,offset2,offset3;
 	btVector3 Points[4];
-
-
+	btVector3 basePoints[4];
+	btVector3 centerOfMass;
+	float parametri[2];
 
 };
 

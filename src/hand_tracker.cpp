@@ -57,7 +57,7 @@ struct fingerConf
 vector<string> fingers_name;
 vector<string> entries_name;
 vector<fingerConf> fingers_data;
-vector<Point3f> fingers_3d;
+Point3f fingers_3d[5];
 
 Config cfg;
 
@@ -74,7 +74,7 @@ string configFile;
 float glRotateParam=0;
 int Pause=0;
 
-KinematicChain kin;
+KinematicChain kin(0,0,0);
 
 Mano lamano(btVector3(0,-100,100));
 
@@ -119,41 +119,40 @@ void pso_init()
 
 void pso_update()
 {
-	if(fingers_3d.size())
+
+	float c1=2.8;
+	float c2=1.3;
+	float r1=myrand();
+	float r2=myrand();
+	float maxSpeed=10.0f;
+
+
+
+	for(int i=0;i<STDIM;i++) //ogni particella dello stormo
 	{
-		float c1=2.8;
-		float c2=1.3;
-		float r1=myrand();
-		float r2=myrand();
-		float maxSpeed=10.0f;
-
-
-
-		for(int i=0;i<STDIM;i++) //ogni particella dello stormo
+		for(int j=0;j<partDIM;j++) //ogni elemento dello stato
 		{
-			for(int j=0;j<partDIM;j++) //ogni elemento dello stato
+			//STORMO[i]-> i-esime particella
+			//posa[j] -> j-esimo elemento
+
+			float update_stormo=c1*r1*(best.posa[j]-stormo[i].posa[j]);
+			float update_sociale=c2*r2*(stormo[i].posaBest[j]-stormo[i].posa[j]);
+			float update=update_stormo+update_sociale;
+			stormo[i].vposa[j]=stormo[i].vposa[j]+update;
+
+			if(abs(stormo[i].vposa[j])>maxSpeed) //controllo se la velocità imposta è maggiore della velocità massima consentita
 			{
-				//STORMO[i]-> i-esime particella
-				//posa[j] -> j-esimo elemento
-
-				float update_stormo=c1*r1*(best.posa[j]-stormo[i].posa[j]);
-				float update_sociale=c2*r2*(stormo[i].posaBest[j]-stormo[i].posa[j]);
-				float update=update_stormo+update_sociale;
-				stormo[i].vposa[j]=stormo[i].vposa[j]+update;
-
-				if(abs(stormo[i].vposa[j])>maxSpeed) //controllo se la velocità imposta è maggiore della velocità massima consentita
-				{
-					stormo[i].vposa[j]=(stormo[i].vposa[j]/abs(stormo[i].vposa[j]))*maxSpeed; //recupero il segno e imposta la velocità
-				}
-				if(DEBUG)
-					cout<< "POSA ("<<i <<"): "<<stormo[i].posa[j]<<" MODIFICA: " << stormo[i].vposa[j] ;
-				stormo[i].posa[j]+=stormo[i].vposa[j];
-				if(DEBUG)
-					cout << " -> : "<< stormo[i].posa[j] <<endl;
-
+				stormo[i].vposa[j]=(stormo[i].vposa[j]/abs(stormo[i].vposa[j]))*maxSpeed; //recupero il segno e imposta la velocità
 			}
+			if(DEBUG)
+				cout<< "POSA ("<<i <<"): "<<stormo[i].posa[j]<<" MODIFICA: " << stormo[i].vposa[j] ;
+			stormo[i].posa[j]+=stormo[i].vposa[j];
+			if(DEBUG)
+				cout << " -> : "<< stormo[i].posa[j] <<endl;
+
 		}
 	}
+
 
 
 
@@ -161,74 +160,71 @@ void pso_update()
 
 void pso_perturba_stormo()
 {
-	if(fingers_3d.size())
+
+	best.errore_posa=999999999999;
+	float max=5;
+	float min=max/2;
+
+
+	for(int j=0;j<partDIM;j++)
 	{
-		best.errore_posa=999999999999;
-		float max=5;
-		float min=max/2;
+		stormo[0].posa[j]=best.posa[j];
+	}
 
 
+	for(int i=1;i<STDIM;i++)
+	{
 		for(int j=0;j<partDIM;j++)
 		{
-			stormo[0].posa[j]=best.posa[j];
-		}
-
-
-		for(int i=1;i<STDIM;i++)
-		{
-			for(int j=0;j<partDIM;j++)
-			{
-				stormo[i].posa[j]=stormo[i].posa[j]+(myrand()*max-min);
-			}
+			stormo[i].posa[j]=stormo[i].posa[j]+(myrand()*max-min);
 		}
 	}
+
 }
 
 void pso_best()
 {
 
-	if(fingers_3d.size())
+
+	for(int i=0;i<STDIM;i++)
 	{
 
-		for(int i=0;i<STDIM;i++)
+		if(stormo[i].errore_posa<best.errore_posa)
 		{
-
-			if(stormo[i].errore_posa<best.errore_posa)
+			best.errore_posa=stormo[i].errore_posa;
+			for(int j=0;j<partDIM;j++)
 			{
-				best.errore_posa=stormo[i].errore_posa;
-				for(int j=0;j<partDIM;j++)
-				{
-					best.posa[j]=stormo[i].posa[j];
+				best.posa[j]=stormo[i].posa[j];
 
-				}
 			}
 		}
-
-
 	}
+
+
+
 
 }
 
 void pso_compute_error()
 {
-	if(fingers_3d.size())
+
+	for(int i=0;i<STDIM;i++)
 	{
-		for(int i=0;i<STDIM;i++)
+		for(int j=0;j<partDIM;j++)
 		{
-			for(int j=0;j<6;j++)
-			{
-				kin.parametri[j]=stormo[i].posa[j];
-			}
-			kin.update();
-
-			stormo[i].errore_posa=
-					(powf(fingers_3d[0].x-kin.Points[3].x(),2)+
-							powf(fingers_3d[0].y-kin.Points[3].y(),2)+
-							powf(fingers_3d[0].z-kin.Points[3].z(),2));
-
-
+			kin.parametri[j]=stormo[i].posa[j];
 		}
+
+		kin.update();
+
+		stormo[i].errore_posa=
+				(powf(fingers_3d[0].x-kin.Points[3].x(),2)+
+						powf(fingers_3d[0].y-kin.Points[3].y(),2)+
+						powf(fingers_3d[0].z-kin.Points[3].z(),2));
+
+
 	}
+
 }
 
 
@@ -252,6 +248,16 @@ void keyboard_Events(char key,VideoCapture &capObj)
 		if(Pause==0) {printf("Paused\n");Pause=1;}
 		else{printf("Play\n");Pause=0;}
 		break;
+	case 's':
+		printf("Reset points...\n");
+		for(int i=0;i<5;i++)
+		{
+			fingers_3d[i].x=999999;
+			fingers_3d[i].y=999999;
+			fingers_3d[i].z=999999;
+		}
+		break;
+
 	case 'r':
 		if (registration==0) {
 			registration=1;
@@ -448,11 +454,13 @@ void openGL(void* param)
 	glutWireCone(10,30,5,5);
 	glPopMatrix();
 
-	for(int i=0;i<(int)fingers_3d.size();i++)
+	for(int i=0;i<5;i++)
 	{
 		glPushMatrix();
 		glTranslatef(fingers_3d[i].x,fingers_3d[i].y,fingers_3d[i].z);
+		glColor3f(0.2*i,1-0.2*i,1);
 		glutWireSphere(10,10,10);
+		glColor3f(1,1,1);
 		glPopMatrix();
 	}
 
@@ -461,8 +469,9 @@ void openGL(void* param)
 	glPopMatrix();
 
 	glPushMatrix();
-	lamano.Rotate();
-	lamano.Draw();
+	kin.Draw();
+	//lamano.Rotate();
+	//lamano.Draw();
 	glPopMatrix();
 
 }
@@ -615,17 +624,16 @@ int main(int argc, char** argv) {
 			mediaBlob.x=0;
 			mediaBlob.y=0;
 
-
 			//Disegno i cerchi facendo la media delle coordinate utili
 			//============================================================================
 			int size=(int)punti.size();
 
 			if(size!=0)
 			{
-				for(int i=0;i<size;i++)
+				for(int k=0;k<size;k++)
 				{
-					mediaBlob.x+=punti[i].pt.x;
-					mediaBlob.y+=punti[i].pt.y;
+					mediaBlob.x+=punti[k].pt.x;
+					mediaBlob.y+=punti[k].pt.y;
 				}
 				mediaBlob.x=(int)(mediaBlob.x/size);
 				mediaBlob.y=(int)(mediaBlob.y/size);
@@ -636,46 +644,30 @@ int main(int argc, char** argv) {
 				Point3f dito3d;
 				dito3d.x=PointMeters[0]*1000;
 				dito3d.y=PointMeters[1]*1000;
-				dito3d.z=PointMeters[2]*1000;
+				dito3d.z=PointMeters[2]*1000-500;
 
-				//printf("X %f Y %f Z %f \n",dito3d.x,dito3d.y,dito3d.z);
-				//printf("Z: %d\n",depthMap.at<short>(mediaBlob.y,mediaBlob.x));
-				fingers_3d.push_back(dito3d);
+				fingers_3d[i]=dito3d;
 			}
 
 
-			//if(fingers_3d.size())
-			//	printf("Target is at: %f %f %F \n",fingers_3d[0].x*1000,fingers_3d[0].y*1000,fingers_3d[0].z*1000);
-			if(fingers_3d.size() && fingers_3d[0].z!=0)
+			for(int i=0;i<GENER;i++)
 			{
-				for(int i=0;i<GENER;i++)
-				{
-					pso_compute_error();
-					pso_best();
-					pso_update();
-				}
-
-				//						printf("Best if:\n");
-				//						printf("P:\tA1[%f]\tA2[%f]\tA3[%f]\tG1[%f]\tG2[%f]\tG3[%f] \n",
-				//								best.posa[0],
-				//								best.posa[1],
-				//								best.posa[2],
-				//								best.posa[3],
-				//								best.posa[4],
-				//								best.posa[5]);
-				//						printf("Errore: \n");
-				//						printf("%f\n",best.errore_posa);
-				for(int i=0;i<6;i++)
-				{
-					kin.parametri[i]=best.posa[i];
-				}
-				kin.update();
-				//cout << "POS: "<<kin.Points[3].x()<< " " <<kin.Points[3].y()<< " "<<kin.Points[3].z()<<endl;
-				//cout << "TARGET: "<<fingers_3d[0].x<< " " <<fingers_3d[0].y<< " "<<fingers_3d[0].z<<endl;
 
 
-				pso_perturba_stormo();
+				pso_compute_error();
+
+				pso_best();
+
+				pso_update();
 			}
+
+			for(int i=0;i<partDIM;i++)
+			{
+				kin.parametri[i]=best.posa[i];
+			}
+			kin.update();
+			pso_perturba_stormo();
+
 
 
 		}
@@ -691,7 +683,7 @@ int main(int argc, char** argv) {
 
 		//update GL window
 		updateWindow(openglWIN);
-		fingers_3d.clear();
+
 
 		//Keyboard event routine
 		keyboard_Events(waitKey(33),capture);
