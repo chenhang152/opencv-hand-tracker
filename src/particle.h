@@ -9,7 +9,7 @@
 #ifndef PARTICLE_H_
 #define PARTICLE_H_
 
-#define partDIM	 15
+#define partDIM	 10
 
 
 

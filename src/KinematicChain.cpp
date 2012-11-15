@@ -8,9 +8,10 @@
 #include "KinematicChain.h"
 
 
-KinematicChain::KinematicChain(float x,float y, float z)
+KinematicChain::KinematicChain(float x,float y, float z,float mod, int pollice)
 {
 
+	this->pollice=pollice;
 
 	this->x=x;
 	this->y=y;
@@ -19,9 +20,11 @@ KinematicChain::KinematicChain(float x,float y, float z)
 	cout <<"Istanziato oggetto cinematico"<<endl;
 	cout <<x<<" "<<y<<" "<<z<<endl;
 
-	this->offset1=140;
-	this->offset2=120;
-	this->offset3=100;
+	this->mod=mod;
+
+	this->offset1=140*mod;
+	this->offset2=120*mod;
+	this->offset3=100*mod;
 
 	btVector3 centerOfMass(0,0,0);
 
@@ -77,9 +80,30 @@ void KinematicChain::Draw() {
 
 void  KinematicChain::update() {
 
-	btQuaternion q1( parametri[2],parametri[0],0);
+	//btQuaternion q1( parametri[2],parametri[0],0);
+
+	const float torand=3.14/180;
+
+	if(parametri[0]<=-90*torand)parametri[0]=-90*torand;
+	if(parametri[1]<=-90*torand)parametri[1]=-90*torand;
+	if(parametri[0]>=0)parametri[0]=0;
+	if(parametri[1]>=0)parametri[1]=0;
+
+	btQuaternion q1;
+	if(pollice)
+		{
+			 q1=btQuaternion( -180*3.14/180,-90*3.14/180,0);
+		}
+		else
+		{
+			 q1=btQuaternion( 0,parametri[0],0);
+		}
+
 	btQuaternion q2( 0,parametri[1],0);
-	btQuaternion q3( 0,parametri[1]/5*6,0);
+
+	if(pollice){q2=btQuaternion( 0,-90*3.14/180,0);}
+
+	btQuaternion q3( 0,parametri[1]*5/6,0);
 
 	btMatrix3x3 r1(q1);
 	btMatrix3x3 r2(q2);
@@ -87,10 +111,9 @@ void  KinematicChain::update() {
 
 
 	Points[0]=basePoints[0];
-	Points[1]=Points[0]+btVector3(0,0,offset1);
-	Points[1]=r1*Points[1];
-	Points[2]=Points[1]+r1*r2*btVector3(0,0,offset2);
-	Points[3]=Points[2]+r1*r2*r3*btVector3(0,0,offset3);
+	Points[1]=Points[0]+r1*btVector3(0,0,offset1);
+	Points[2]=Points[1]+r2*r1*btVector3(0,0,offset2);
+	Points[3]=Points[2]+r3*r2*r1*btVector3(0,0,offset3);
 
 }
 

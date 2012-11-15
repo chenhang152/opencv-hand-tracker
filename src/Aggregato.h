@@ -24,7 +24,7 @@ public:
 	void update();
 
 	KinematicChain * dita[5];
-	float * parametri[15];
+	float * parametri[10];
 
 	virtual ~Aggregato();
 };

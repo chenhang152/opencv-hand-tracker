@@ -37,7 +37,7 @@ using namespace cv;
 #define ERODEELEM 6
 #define	 ERODESIZE 7
 #define STDIM 	10
-#define	 GENER	50
+#define	 GENER	30
 #define	 DEBUG	0
 
 #define SYNTETHIC 1
@@ -154,21 +154,6 @@ void pso_update()
 
 			//CONTROLLO ANGOLI DELLE DITA MAI MAGGIORI DI 90°
 
-			//if(1)
-			if(0)
-			{
-				if(j==2||j==5||j==8||j==11||j==14)
-				{
-					if(stormo[i].posa[j]>=0.087)stormo[i].posa[j]=0.087;
-					if(stormo[i].posa[j]<=-0.087)stormo[i].posa[j]=-0.087;
-				}
-				else
-				{
-					if(stormo[i].posa[j]>=1.57)stormo[i].posa[j]=1.57;
-					if(stormo[i].posa[j]<=0)stormo[i].posa[j]=0;
-				}
-			}
-
 
 
 
@@ -184,7 +169,7 @@ void pso_perturba_stormo()
 {
 
 	best.errore_posa=999999999999;
-	float max=10;
+	float max=20;
 	float min=max/2;
 
 
@@ -573,8 +558,8 @@ int main(int argc, char** argv) {
 	}
 	else
 	{
-	capture=VideoCapture(0);
-	opencv_init(capture);
+		capture=VideoCapture(0);
+		opencv_init(capture);
 	}
 
 	//GLUT INIT
@@ -763,9 +748,9 @@ int main(int argc, char** argv) {
 			for(int l=0;l<5;l++)
 			{
 				fingers_3d[l].x=0+l*50;
-				fingers_3d[l].y=100*cos((45+l)*3.14/180);
-				fingers_3d[l].z=200;
-				incrementer+=1;
+				fingers_3d[l].y=300+300*cos(incrementer)+(1+l*2)*cos(incrementer)/cos(incrementer);
+				fingers_3d[l].z=0;
+				incrementer+=0.0005;
 			}
 
 

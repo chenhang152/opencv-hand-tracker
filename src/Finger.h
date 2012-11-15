@@ -33,7 +33,6 @@ public:
 	float offset3;
 	float globalAngle;
 
-	float *Parametri[6];
 	btVector3 Points[4];
 	btVector3 basePoints[4];
 	btVector3 centerOfMass;

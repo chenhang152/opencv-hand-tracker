@@ -27,18 +27,19 @@ using namespace std;
 class KinematicChain {
 public:
 
-	KinematicChain(float x,float y, float z);
+	KinematicChain(float x,float y, float z,float mod, int pollice=0);
 	void Draw();
 	void update();
 	virtual ~KinematicChain();
 
 	int x,y,z;
-	int offset1,offset2,offset3;
+	float mod;
+	float offset1,offset2,offset3;
 	btVector3 Points[4];
 	btVector3 basePoints[4];
 	btVector3 centerOfMass;
 	float parametri[3];
-
+	int pollice;
 };
 
 #endif /* KINEMATICCHAIN_H_ */
