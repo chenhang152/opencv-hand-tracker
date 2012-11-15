@@ -36,8 +36,8 @@ using namespace cv;
 #define VMAX 5
 #define ERODEELEM 6
 #define	 ERODESIZE 7
-#define STDIM 	10
-#define	 GENER	30
+#define STDIM 	30
+#define	 GENER	60
 #define	 DEBUG	0
 
 #define SYNTETHIC 1
@@ -454,15 +454,6 @@ void openGL(void* param)
 			0,1,0);
 
 
-	/*
-	glPushMatrix();
-	glRotatef(glRotateParam,0,1,0);
-	glutWireCube(100.0f);
-	glPopMatrix();
-	 */
-
-
-
 	glPushMatrix();
 	glRotatef(((float)yrot)-180,0,1,0);
 	glRotatef(((float)xrot)-180,1,0,0);
@@ -478,6 +469,7 @@ void openGL(void* param)
 	glTranslatef(0,50,-200);
 	glutWireCone(10,30,5,5);
 	glPopMatrix();
+
 
 	for(int i=0;i<5;i++)
 	{
@@ -747,11 +739,16 @@ int main(int argc, char** argv) {
 
 			for(int l=0;l<5;l++)
 			{
+
 				fingers_3d[l].x=0+l*50;
-				fingers_3d[l].y=300+300*cos(incrementer)+(1+l*2)*cos(incrementer)/cos(incrementer);
-				fingers_3d[l].z=0;
+				fingers_3d[l].y=-300*cos(incrementer)+(1+l*2)*cos(incrementer)/cos(incrementer);
+				fingers_3d[l].z=-50;
 				incrementer+=0.0005;
+
+
 			}
+
+
 
 
 

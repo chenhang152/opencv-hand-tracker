@@ -25,6 +25,12 @@ KinematicChain::KinematicChain(float x,float y, float z,float mod, int pollice)
 	this->offset1=140*mod;
 	this->offset2=120*mod;
 	this->offset3=100*mod;
+	if(pollice)
+	{
+		this->y-=80;
+		this->z-=30;
+		this->offset3 =0;
+	}
 
 	btVector3 centerOfMass(0,0,0);
 
@@ -84,26 +90,34 @@ void  KinematicChain::update() {
 
 	const float torand=3.14/180;
 
-	if(parametri[0]<=-90*torand)parametri[0]=-90*torand;
-	if(parametri[1]<=-90*torand)parametri[1]=-90*torand;
-	if(parametri[0]>=0)parametri[0]=0;
-	if(parametri[1]>=0)parametri[1]=0;
+
 
 	btQuaternion q1;
+	btQuaternion q2;
+	btQuaternion q3;
 	if(pollice)
-		{
-			 q1=btQuaternion( -180*3.14/180,-90*3.14/180,0);
-		}
-		else
-		{
-			 q1=btQuaternion( 0,parametri[0],0);
-		}
+	{
+		if(parametri[0]<=-90*torand)parametri[0]=-90*torand;
+		if(parametri[1]<=-90*torand)parametri[1]=-90*torand;
+		if(parametri[0]>=0)parametri[0]=0;
+		if(parametri[1]>=0)parametri[1]=0;
 
-	btQuaternion q2( 0,parametri[1],0);
+		q1=btQuaternion( 0,-1.57,-parametri[0]);
+		q2=btQuaternion( 0,0,parametri[1]);
+		q3=btQuaternion( 0,0,parametri[1]*5/6);
+	}
+	else
+	{
 
-	if(pollice){q2=btQuaternion( 0,-90*3.14/180,0);}
+		if(parametri[0]<=-90*torand)parametri[0]=-90*torand;
+		if(parametri[1]<=-90*torand)parametri[1]=-90*torand;
+		if(parametri[0]>=0)parametri[0]=0;
+		if(parametri[1]>=0)parametri[1]=0;
+		q1=btQuaternion( 0,parametri[0],0);
+		q2=btQuaternion( 0,parametri[1],0);
+		q3=btQuaternion( 0,parametri[1]*5/6,0);
+	}
 
-	btQuaternion q3( 0,parametri[1]*5/6,0);
 
 	btMatrix3x3 r1(q1);
 	btMatrix3x3 r2(q2);
