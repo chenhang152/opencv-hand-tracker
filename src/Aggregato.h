@@ -23,8 +23,8 @@ public:
 	void Draw();
 	void update();
 
-	KinematicChain * dita[2];
-	float * parametri[6];
+	KinematicChain * dita[5];
+	float * parametri[15];
 
 	virtual ~Aggregato();
 };

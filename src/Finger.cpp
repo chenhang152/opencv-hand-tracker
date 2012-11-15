@@ -55,9 +55,14 @@ void Finger::update()
 
 	angle3=angle2;
 
-	btQuaternion q1( angle1*3.14/180,0,0);
-	btQuaternion q2( angle2*3.14/180,0,0);
-	btQuaternion q3( angle3/5*6*3.14/180,0,0);
+	angle1*=TORAD;
+	angle2*=TORAD;
+	angle3*=TORAD;
+
+
+	btQuaternion q1( angle1,0,0);
+	btQuaternion q2( angle2,0,0);
+	btQuaternion q3( angle3/6*5,0,0);
 
 	btMatrix3x3 r1(q1);
 	btMatrix3x3 r2(q2);

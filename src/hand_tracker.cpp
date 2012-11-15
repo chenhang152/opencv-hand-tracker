@@ -16,7 +16,6 @@
 #include <GL/glut.h>
 #include <pthread.h>
 #include "particle.h"
-#include "KinematicChain.h"
 #include "particle.h"
 #include "Finger.h"
 #include "Aggregato.h"
@@ -37,9 +36,12 @@ using namespace cv;
 #define VMAX 5
 #define ERODEELEM 6
 #define	 ERODESIZE 7
-#define STDIM 	30
-#define	 GENER	90
+#define STDIM 	10
+#define	 GENER	50
 #define	 DEBUG	0
+
+#define SYNTETHIC 1
+
 Mat hsvImage;
 struct fingerConf
 {
@@ -67,6 +69,8 @@ Mat bgrImage=Mat::zeros(640,480,CV_8UC3);
 
 int zmin=0;
 int zmax=5000;
+int yrot=180;
+int xrot=180;
 int registration=0;
 
 string openglWIN ="OpenGL";
@@ -74,7 +78,7 @@ string configFile;
 float glRotateParam=0;
 int Pause=0;
 
-KinematicChain kin(0,0,0);
+float incrementer;
 
 Aggregato oggetto;
 
@@ -148,6 +152,25 @@ void pso_update()
 
 			stormo[i].posa[j]+=stormo[i].vposa[j];
 
+			//CONTROLLO ANGOLI DELLE DITA MAI MAGGIORI DI 90°
+
+			//if(1)
+			if(0)
+			{
+				if(j==2||j==5||j==8||j==11||j==14)
+				{
+					if(stormo[i].posa[j]>=0.087)stormo[i].posa[j]=0.087;
+					if(stormo[i].posa[j]<=-0.087)stormo[i].posa[j]=-0.087;
+				}
+				else
+				{
+					if(stormo[i].posa[j]>=1.57)stormo[i].posa[j]=1.57;
+					if(stormo[i].posa[j]<=0)stormo[i].posa[j]=0;
+				}
+			}
+
+
+
 
 		}
 	}
@@ -161,7 +184,7 @@ void pso_perturba_stormo()
 {
 
 	best.errore_posa=999999999999;
-	float max=5;
+	float max=10;
 	float min=max/2;
 
 
@@ -211,25 +234,22 @@ void pso_compute_error()
 	{
 		for(int j=0;j<partDIM;j++)
 		{
-			//kin.parametri[j]=stormo[i].posa[j];
+
 			*(oggetto.parametri[j])=stormo[i].posa[j];
 		}
 
-		//kin.update();
+
 		oggetto.update();
 
 		stormo[i].errore_posa=0;
-				//(powf(fingers_3d[0].x-kin.Points[3].x(),2)+
-				//		powf(fingers_3d[0].y-kin.Points[3].y(),2)+
-				//		powf(fingers_3d[0].z-kin.Points[3].z(),2));
-		for(int k=0;k<2;k++)
+
+		for(int k=0;k<5;k++)
 		{
 			stormo[i].errore_posa+=
-								(
-								powf(fingers_3d[k].x-oggetto.dita[k]->Points[3].x(),2)+
-								powf(fingers_3d[k].y-oggetto.dita[k]->Points[3].y(),2)+
-								powf(fingers_3d[k].z-oggetto.dita[k]->Points[3].z(),2));
-			//stormo[i].errore_posa=sqrtf(stormo[i].errore_posa);
+					(
+							powf(fingers_3d[k].x-oggetto.dita[k]->Points[3].x(),2)+
+							powf(fingers_3d[k].y-oggetto.dita[k]->Points[3].y(),2)+
+							powf(fingers_3d[k].z-oggetto.dita[k]->Points[3].z(),2));
 		}
 
 	}
@@ -375,6 +395,9 @@ void opencv_init(VideoCapture &cap)
 
 	createTrackbar( "Z min", "RGB", &zmin, 5000,  NULL);
 	createTrackbar( "Z max", "RGB", &zmax, 5000,  NULL);
+
+	createTrackbar( "Y Rotate", openglWIN, &yrot, 360,  NULL);
+	createTrackbar( "X Rotate", openglWIN, &xrot, 360,  NULL);
 }
 //============================================================================
 
@@ -453,10 +476,18 @@ void openGL(void* param)
 	glPopMatrix();
 	 */
 
+
+
+	glPushMatrix();
+	glRotatef(((float)yrot)-180,0,1,0);
+	glRotatef(((float)xrot)-180,1,0,0);
+
+
 	glBegin(GL_LINES);
 	glVertex3f(0,50,-200);
 	glVertex3f(0,50,-300);
 	glEnd();
+
 
 	glPushMatrix();
 	glTranslatef(0,50,-200);
@@ -478,8 +509,11 @@ void openGL(void* param)
 	glPopMatrix();
 
 	glPushMatrix();
-	//kin.Draw();
+
 	oggetto.Draw();
+	glPopMatrix();
+
+
 	glPopMatrix();
 
 }
@@ -530,8 +564,18 @@ int main(int argc, char** argv) {
 	read_conf_file(1);
 
 	//Inizializzo openCV
-	VideoCapture capture(CV_CAP_OPENNI);
+	VideoCapture capture;
+	if(!SYNTETHIC)
+	{
+		//VideoCapture capture(CV_CAP_OPENNI);
+		capture.open(CV_CAP_OPENNI);
+		opencv_init(capture);
+	}
+	else
+	{
+	capture=VideoCapture(0);
 	opencv_init(capture);
+	}
 
 	//GLUT INIT
 	glutInit(&argc, argv);
@@ -547,6 +591,7 @@ int main(int argc, char** argv) {
 	resizeWindow(openglWIN, 640, 480);
 	setOpenGlDrawCallback(openglWIN, openGL);
 
+
 	pso_init();
 
 	//init dita
@@ -554,108 +599,175 @@ int main(int argc, char** argv) {
 
 	while(1)
 	{
-
-		capture.grab();
-		capture.retrieve( depthMap, CV_CAP_OPENNI_DEPTH_MAP );
-		capture.retrieve( bgrImage, CV_CAP_OPENNI_BGR_IMAGE );
-		capture.retrieve( xyzMap, CV_CAP_OPENNI_POINT_CLOUD_MAP );
-
-		int cols=depthMap.cols;
-		int rows=depthMap.rows;
-
-		int t[2];
-		t[0]=depthMap.cols;
-		t[1]=depthMap.rows;
-
-		for(int i=0;i<rows;i++)
+		if(!SYNTETHIC)
 		{
-			for(int j=0;j<cols;j++)
+			capture.grab();
+
+			capture.retrieve( depthMap, CV_CAP_OPENNI_DEPTH_MAP );
+
+			capture.retrieve( bgrImage, CV_CAP_OPENNI_BGR_IMAGE );
+
+			capture.retrieve( xyzMap, CV_CAP_OPENNI_POINT_CLOUD_MAP );
+
+			int cols=depthMap.cols;
+			int rows=depthMap.rows;
+
+			int t[2];
+			t[0]=depthMap.cols;
+			t[1]=depthMap.rows;
+
+			for(int i=0;i<rows;i++)
 			{
-				if(depthMap.at<short>(j+i*cols)>zmax || depthMap.at<short>(j+i*cols)<zmin)
+				for(int j=0;j<cols;j++)
 				{
-					bgrImage.at<Vec3b>(j+i*cols)[0]=0;
-					bgrImage.at<Vec3b>(j+i*cols)[1]=0;
-					bgrImage.at<Vec3b>(j+i*cols)[2]=0;
+					if(depthMap.at<short>(j+i*cols)>zmax || depthMap.at<short>(j+i*cols)<zmin)
+					{
+						bgrImage.at<Vec3b>(j+i*cols)[0]=0;
+						bgrImage.at<Vec3b>(j+i*cols)[1]=0;
+						bgrImage.at<Vec3b>(j+i*cols)[2]=0;
+					}
 				}
 			}
+
+			//Converto l'immagine BGR in HSV
+			cvtColor(bgrImage,hsvImage, CV_BGR2HSV);
+
+			//Istanzio la mini-image per mostrare la maschera
+
+			Mat maskImage=Mat::zeros(480,640,CV_8UC1);
+
+			for(int i =0; i<(int)fingers_data.size();i++)
+			{
+
+
+				Mat tmpHSV=hsvImage;
+				//Filtro l'immagine hsv per ottere una binaria con i parametri di ogni dito
+				inRange(tmpHSV,
+						Scalar(fingers_data[i].data[HMIN],fingers_data[i].data[SMIN],fingers_data[i].data[VMIN]),
+						Scalar(fingers_data[i].data[HMAX],fingers_data[i].data[SMAX],fingers_data[i].data[VMAX]),tmpHSV);
+
+
+				//EROSIONE
+				//============================================================================
+				int erosion_type;
+				if( fingers_data[i].data[ERODEELEM] == 0 ){ erosion_type = MORPH_RECT; }
+				else if( fingers_data[i].data[ERODEELEM] == 1 ){ erosion_type = MORPH_CROSS; }
+				else if( fingers_data[i].data[ERODEELEM] == 2) { erosion_type = MORPH_ELLIPSE; }
+
+
+				Mat element = getStructuringElement( erosion_type,
+						Size( 2*fingers_data[i].data[ERODESIZE] + 1, 2*fingers_data[i].data[ERODESIZE]+1 ),
+						Point( fingers_data[i].data[ERODESIZE], fingers_data[i].data[ERODESIZE] ) );
+
+				erode( tmpHSV, tmpHSV, element );
+				//============================================================================
+
+				//Aggiungo i pixel mascherati alla maschera totale
+
+				maskImage+=tmpHSV;
+
+				//BLOB
+				//============================================================================
+				SimpleBlobDetector::Params parametri;
+				parametri.filterByArea=1;
+				parametri.maxArea=10000;
+				parametri.minArea=2;
+				SimpleBlobDetector *blobDetector=new SimpleBlobDetector(parametri);
+				blobDetector->create("SimpleBlobDetector");
+				vector<KeyPoint> punti;
+				blobDetector->detect(tmpHSV,punti);
+
+				Point2i mediaBlob;
+				mediaBlob.x=0;
+				mediaBlob.y=0;
+
+				//Disegno i cerchi facendo la media delle coordinate utili
+				//============================================================================
+				int size=(int)punti.size();
+
+				if(size!=0)
+				{
+					for(int k=0;k<size;k++)
+					{
+						mediaBlob.x+=punti[k].pt.x;
+						mediaBlob.y+=punti[k].pt.y;
+					}
+					mediaBlob.x=(int)(mediaBlob.x/size);
+					mediaBlob.y=(int)(mediaBlob.y/size);
+					circle(bgrImage,mediaBlob,10,Scalar(0,0,255));
+
+
+					Vec3f PointMeters=xyzMap.at<Vec3f>(mediaBlob.y,mediaBlob.x);
+					Point3f dito3d;
+					dito3d.x=PointMeters[0]*1000;
+					dito3d.y=PointMeters[1]*1000;
+					dito3d.z=PointMeters[2]*1000-500;
+
+					fingers_3d[i]=dito3d;
+				}
+
+				//TEST SINTETICO
+				for(int l=0;l<5;l++)
+				{
+					fingers_3d[l].x=0+l*50;
+					fingers_3d[l].y=100*cos((45+l)*3.14/180);
+					fingers_3d[l].z=200;
+					incrementer+=1;
+				}
+
+
+
+				for(int i=0;i<GENER;i++)
+				{
+
+
+					pso_compute_error();
+
+					pso_best();
+
+					pso_update();
+				}
+
+				for(int i=0;i<partDIM;i++)
+				{
+
+					*(oggetto.parametri[i])=best.posa[i];
+				}
+
+				oggetto.update();
+				pso_perturba_stormo();
+
+
+
+			}
+
+
+			resize(maskImage,maskImage,Size(160,120),0,0,INTER_NEAREST);
+			miniImage(bgrImage,maskImage,Point(0,0),Point(160,120));
+
+			if(Pause==0)
+			{
+				imshow("RGB",bgrImage);
+			}
+
+			//update GL window
+			updateWindow(openglWIN);
+
+
+			//Keyboard event routine
+			keyboard_Events(waitKey(33),capture);
 		}
-
-		//Converto l'immagine BGR in HSV
-		cvtColor(bgrImage,hsvImage, CV_BGR2HSV);
-
-		//Istanzio la mini-image per mostrare la maschera
-
-		Mat maskImage=Mat::zeros(480,640,CV_8UC1);
-
-		for(int i =0; i<(int)fingers_data.size();i++)
+		else
 		{
 
-
-			Mat tmpHSV=hsvImage;
-			//Filtro l'immagine hsv per ottere una binaria con i parametri di ogni dito
-			inRange(tmpHSV,
-					Scalar(fingers_data[i].data[HMIN],fingers_data[i].data[SMIN],fingers_data[i].data[VMIN]),
-					Scalar(fingers_data[i].data[HMAX],fingers_data[i].data[SMAX],fingers_data[i].data[VMAX]),tmpHSV);
-
-
-			//EROSIONE
-			//============================================================================
-			int erosion_type;
-			if( fingers_data[i].data[ERODEELEM] == 0 ){ erosion_type = MORPH_RECT; }
-			else if( fingers_data[i].data[ERODEELEM] == 1 ){ erosion_type = MORPH_CROSS; }
-			else if( fingers_data[i].data[ERODEELEM] == 2) { erosion_type = MORPH_ELLIPSE; }
-
-
-			Mat element = getStructuringElement( erosion_type,
-					Size( 2*fingers_data[i].data[ERODESIZE] + 1, 2*fingers_data[i].data[ERODESIZE]+1 ),
-					Point( fingers_data[i].data[ERODESIZE], fingers_data[i].data[ERODESIZE] ) );
-
-			erode( tmpHSV, tmpHSV, element );
-			//============================================================================
-
-			//Aggiungo i pixel mascherati alla maschera totale
-
-			maskImage+=tmpHSV;
-
-			//BLOB
-			//============================================================================
-			SimpleBlobDetector::Params parametri;
-			parametri.filterByArea=1;
-			parametri.maxArea=10000;
-			parametri.minArea=2;
-			SimpleBlobDetector *blobDetector=new SimpleBlobDetector(parametri);
-			blobDetector->create("SimpleBlobDetector");
-			vector<KeyPoint> punti;
-			blobDetector->detect(tmpHSV,punti);
-
-			Point2i mediaBlob;
-			mediaBlob.x=0;
-			mediaBlob.y=0;
-
-			//Disegno i cerchi facendo la media delle coordinate utili
-			//============================================================================
-			int size=(int)punti.size();
-
-			if(size!=0)
+			for(int l=0;l<5;l++)
 			{
-				for(int k=0;k<size;k++)
-				{
-					mediaBlob.x+=punti[k].pt.x;
-					mediaBlob.y+=punti[k].pt.y;
-				}
-				mediaBlob.x=(int)(mediaBlob.x/size);
-				mediaBlob.y=(int)(mediaBlob.y/size);
-				circle(bgrImage,mediaBlob,10,Scalar(0,0,255));
-
-
-				Vec3f PointMeters=xyzMap.at<Vec3f>(mediaBlob.y,mediaBlob.x);
-				Point3f dito3d;
-				dito3d.x=PointMeters[0]*1000;
-				dito3d.y=PointMeters[1]*1000;
-				dito3d.z=PointMeters[2]*1000-500;
-
-				fingers_3d[i]=dito3d;
+				fingers_3d[l].x=0+l*50;
+				fingers_3d[l].y=100*cos((45+l)*3.14/180);
+				fingers_3d[l].z=200;
+				incrementer+=1;
 			}
+
 
 
 			for(int i=0;i<GENER;i++)
@@ -671,33 +783,21 @@ int main(int argc, char** argv) {
 
 			for(int i=0;i<partDIM;i++)
 			{
-				//kin.parametri[i]=best.posa[i];
+
 				*(oggetto.parametri[i])=best.posa[i];
 			}
-			//kin.update();
+
 			oggetto.update();
 			pso_perturba_stormo();
+			//update GL window
+			updateWindow(openglWIN);
 
 
-
+			//Keyboard event routine
+			keyboard_Events(waitKey(33),capture);
 		}
-
-
-		resize(maskImage,maskImage,Size(160,120),0,0,INTER_NEAREST);
-		miniImage(bgrImage,maskImage,Point(0,0),Point(160,120));
-
-		if(Pause==0)
-		{
-			imshow("RGB",bgrImage);
-		}
-
-		//update GL window
-		updateWindow(openglWIN);
-
-
-		//Keyboard event routine
-		keyboard_Events(waitKey(33),capture);
 	}
+
 
 	return 0;
 }

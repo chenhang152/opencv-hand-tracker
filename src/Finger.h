@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <iostream>
 
+#define TORAD 3.14/180
+
 class Finger {
 public:
 	Finger(float x,float y, float z, btVector3 com);

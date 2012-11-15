@@ -9,7 +9,7 @@
 #ifndef PARTICLE_H_
 #define PARTICLE_H_
 
-#define partDIM	 6
+#define partDIM	 15
 
 
 
@@ -18,9 +18,9 @@ public:
 	particle();
 	virtual ~particle();
 
-	float posa[6];
-	float posaBest[6];
-	float vposa[6];
+	float posa[partDIM];
+	float posaBest[partDIM];
+	float vposa[partDIM];
 
 	float errore_posa;
 	float errore_posaBest;
