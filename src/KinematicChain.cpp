@@ -109,10 +109,14 @@ void  KinematicChain::update() {
 	else
 	{
 
-		if(parametri[0]<=-90*torand)parametri[0]=-90*torand;
+		if(parametri[0]>=-90*torand)parametri[0]=-90*torand;
 		if(parametri[1]<=-90*torand)parametri[1]=-90*torand;
-		if(parametri[0]>=0)parametri[0]=0;
-		if(parametri[1]>=0)parametri[1]=0;
+
+		if(parametri[0]<=-180*torand)parametri[0]=-180*torand;
+		if(parametri[1]>=0)parametri[1]=0*torand;
+
+
+
 		q1=btQuaternion( 0,parametri[0],0);
 		q2=btQuaternion( 0,parametri[1],0);
 		q3=btQuaternion( 0,parametri[1]*5/6,0);

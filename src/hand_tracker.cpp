@@ -37,7 +37,7 @@ using namespace cv;
 #define ERODEELEM 6
 #define	 ERODESIZE 7
 #define STDIM 	30
-#define	 GENER	60
+#define	 GENER	20
 #define	 DEBUG	0
 
 #define SYNTETHIC 1
@@ -742,7 +742,7 @@ int main(int argc, char** argv) {
 
 				fingers_3d[l].x=0+l*50;
 				fingers_3d[l].y=-300*cos(incrementer)+(1+l*2)*cos(incrementer)/cos(incrementer);
-				fingers_3d[l].z=-50;
+				fingers_3d[l].z=-200;
 				incrementer+=0.0005;
 
 
